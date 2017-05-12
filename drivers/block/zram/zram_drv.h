@@ -18,8 +18,10 @@
 #include <linux/rwsem.h>
 #include <linux/zsmalloc.h>
 #include <linux/crypto.h>
+#include <linux/spinlock.h>
 
 #include "zcomp.h"
+#include "zram_dedup.h"
 
 #define SECTOR_SHIFT		9
 #define SECTORS_PER_PAGE_SHIFT	(PAGE_SHIFT - SECTOR_SHIFT)
@@ -67,6 +69,10 @@ enum zram_pageflags {
 /*-- Data structures */
 
 struct zram_entry {
+	struct rb_node rb_node;
+	u32 len;
+	u32 checksum;
+	unsigned long refcount;
 	unsigned long handle;
 };
 
@@ -107,6 +113,16 @@ struct zram_stats {
 	atomic64_t wb_pages_max;	/* no. of max pages in backing device */
 #endif
 #endif
+	atomic64_t dup_data_size;	/*
+					 * compressed size of pages
+					 * duplicated
+					 */
+	atomic64_t meta_data_size;	/* size of zram_entries */
+};
+
+struct zram_hash {
+	spinlock_t lock;
+	struct rb_root rb_root;
 };
 
 #ifdef CONFIG_MIUI_ZRAM_MEMORY_TRACKING
@@ -122,6 +138,8 @@ struct zram {
 	struct zs_pool *mem_pool;
 	struct zcomp *comp;
 	struct gendisk *disk;
+	struct zram_hash *hash;
+	size_t hash_size;
 	/* Prevent concurrent execution of device init */
 	struct rw_semaphore init_lock;
 	/*
@@ -163,4 +181,6 @@ struct zram {
 
 /* mlog */
 unsigned long zram_mlog(void);
+
+void zram_entry_free(struct zram *zram, struct zram_entry *entry);
 #endif
