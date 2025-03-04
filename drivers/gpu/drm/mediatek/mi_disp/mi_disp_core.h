@@ -12,6 +12,8 @@
 #define MI_DISPLAY_PROCFS_DIR  "mi_display"
 #define MI_DISPLAY_DEBUGFS_DIR  "mi_display"
 
+struct device;
+
 struct disp_core {
 	struct class *class;
 	struct dentry *debugfs_dir;
