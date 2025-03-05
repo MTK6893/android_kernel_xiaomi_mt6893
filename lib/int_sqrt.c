@@ -44,6 +44,5 @@ inline unsigned long int_sqrt(unsigned long x)
 	}while (place != 0);
 
 	return root;
-	}
 }
 EXPORT_SYMBOL(int_sqrt);
