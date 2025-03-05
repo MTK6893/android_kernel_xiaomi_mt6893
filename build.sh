@@ -9,35 +9,35 @@ log() {
 }
 
 # Function to install required packages
-install_deps() {
-    local packages=("curl" "ccache" "make" "libssl-dev")
-    # build-essential
-
-    for package in "${packages[@]}"; do
-        if ! dpkg -s "$package" >/dev/null 2>&1; then
-            log "Installing $package..."
-            sudo apt-get install -y "$package"
-        else
-            log "$package is already installed."
-        fi
-    done
-}
+# install_deps() {
+#   local packages=("curl" "ccache" "make" "libssl-dev")
+#    # build-essential
+#
+#    for package in "${packages[@]}"; do
+#        if ! dpkg -s "$package" >/dev/null 2>&1; then
+#            log "Installing $package..."
+#            sudo apt-get install -y "$package"
+#        else
+#            log "$package is already installed."
+#        fi
+#    done
+#}
 
 # Function to install the zyc-clang toolchain
-install_zyc_clang_toolchain() {
-    mkdir -p "$ZYC_CLANG_DIR" && cd "$ZYC_CLANG_DIR" || return 1
-    
-    log "Downloading zyc-clang toolchain..."
-    #curl -LO "https://gh.llkk.cc/https://github.com/ZyCromerZ/Clang/releases/download/20.0.0git-20241110-release/Clang-20.0.0git-20241110.tar.gz"
-
-    log "Extracting zyc-clang toolchain..."
-    #tar -xzf "Clang-16.0.6-20240430.tar.gz"
-
-    #echo "Clang-16.0.6-20240430.tar.gz" > "$last_download_file"
-    log "Zyc-clang toolchain updated successfully."
-
-    cd - || return 1
-}
+# install_zyc_clang_toolchain() {
+#     mkdir -p "$ZYC_CLANG_DIR" && cd "$ZYC_CLANG_DIR" || return 1
+#     
+#     log "Downloading zyc-clang toolchain..."
+#     #curl -LO "https://gh.llkk.cc/https://github.com/ZyCromerZ/Clang/releases/download/20.0.0git-20241110-release/Clang-20.0.0git-20241110.tar.gz"
+# 
+#     log "Extracting zyc-clang toolchain..."
+#     #tar -xzf "Clang-16.0.6-20240430.tar.gz"
+# 
+#     #echo "Clang-16.0.6-20240430.tar.gz" > "$last_download_file"
+#     log "Zyc-clang toolchain updated successfully."
+# 
+#     cd - || return 1
+# }
 
 # Function to build the kernel
 build_kernel() {
@@ -70,7 +70,7 @@ build_kernel() {
     make "${make_options[@]}" \
         clean \
         mrproper \
-        chopin_user_defconfig
+        设备配置文件
 
     log "Building the kernel..."
     make -j$(nproc --all) \
@@ -113,7 +113,7 @@ build_boot_img() {
 
 
 # Install required packages for compiling
-install_deps
+# install_deps
 
 #### Toolchain ####
 #--- ZyC Clang ---#
