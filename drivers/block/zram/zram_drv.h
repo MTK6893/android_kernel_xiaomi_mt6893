@@ -88,7 +88,6 @@ struct zram_stats {
 	atomic64_t notify_free;	/* no. of swap slot free notifications */
 	atomic64_t same_pages;		/* no. of same element filled pages */
 	atomic64_t huge_pages;		/* no. of huge pages */
-	atomic64_t huge_pages_since;	/* no. of huge pages since zram set up */
 	atomic64_t pages_stored;	/* no. of pages currently stored */
 #ifdef CONFIG_MIUI_ZRAM_MEMORY_TRACKING
 	atomic64_t origin_pages_max;	/* no. of maximum origin pages stored */
