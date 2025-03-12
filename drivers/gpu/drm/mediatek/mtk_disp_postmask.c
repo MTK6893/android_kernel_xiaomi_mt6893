@@ -447,7 +447,7 @@ static int mtk_disp_postmask_bind(struct device *dev, struct device *master,
 	struct drm_device *drm_dev = data;
 	int ret;
 
-	DDPINFO("%s\n", __func__);
+	DDPDBG("%s\n", __func__);
 
 	ret = mtk_ddp_comp_register(drm_dev, &priv->ddp_comp);
 	if (ret < 0) {
@@ -535,7 +535,7 @@ static int mtk_disp_postmask_probe(struct platform_device *pdev)
 	int irq;
 	int ret;
 
-	DDPINFO("%s+\n", __func__);
+	DDPDBG("%s+\n", __func__);
 
 	priv = devm_kzalloc(dev, sizeof(*priv), GFP_KERNEL);
 	if (priv == NULL)
@@ -577,7 +577,7 @@ static int mtk_disp_postmask_probe(struct platform_device *pdev)
 		dev_err(dev, "Failed to add component: %d\n", ret);
 		pm_runtime_disable(dev);
 	}
-	DDPINFO("%s-\n", __func__);
+	DDPDBG("%s-\n", __func__);
 
 	return ret;
 }
