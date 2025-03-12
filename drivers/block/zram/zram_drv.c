@@ -2501,9 +2501,6 @@ static int zram_add(void)
 #if defined(CONFIG_ZRAM_WRITEBACK) || defined(CONFIG_RTMM)
 	spin_lock_init(&zram->wb_limit_lock);
 #endif
-#ifdef CONFIG_ZRAM_DEDUP
- 	zram->use_dedup = true;
-#endif
 	queue = blk_alloc_queue(GFP_KERNEL);
 	if (!queue) {
 		pr_err("Error allocating disk queue for device %d\n",
