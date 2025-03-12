@@ -93,6 +93,8 @@ ifeq ($(CONFIG_AGATE_CHARGER),y)
 	obj-y += ti_agate/
 else ifeq ($(CONFIG_ARES_CHARGER),y)
 	obj-y += ti_ares/
+else ifeq ($(CONFIG_CHOPIN_CHARGER),y)
+	obj-y += ti_chopin/
 else ifeq ($(CONFIG_PISSARRO_CHARGER),y)
 	obj-y += ti_pissarro/
 	obj-y += mps_pissarro/
