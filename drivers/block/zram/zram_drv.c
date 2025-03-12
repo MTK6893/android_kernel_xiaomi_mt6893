@@ -1910,7 +1910,13 @@ static int __zram_bvec_write(struct zram *zram, struct bio_vec *bvec,
 		goto out;
 	}
 	kunmap_atomic(mem);
-
+	
+	entry = zram_dedup_find(zram, page, &checksum);
+ 	if (entry) {
+ 		flags = ZRAM_DEDUPED;
+ 		comp_len = entry->len;
+ 		goto out;
+ 	}
 
 compress_again:
 	zstrm = zcomp_stream_get(zram->comp);
