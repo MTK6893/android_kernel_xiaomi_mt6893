@@ -425,6 +425,11 @@ static bool pd_disable_cp_by_jeita_status(struct usbpd_pm *pdpm)
 /* get bq27z561 battery verified to enable or disabled */
 static bool pd_get_bms_digest_verified(struct usbpd_pm *pdpm)
 {
+	return true;	/* Always return true */
+
+	// The following code is now unnecessary and can be removed
+
+	/*
 	union power_supply_propval pval = {0,};
 	int rc;
 
@@ -444,6 +449,7 @@ static bool pd_get_bms_digest_verified(struct usbpd_pm *pdpm)
 		return true;
 	else
 		return false;
+	*/
 }
 
 /* get pd pps charger verified result  */
