@@ -232,7 +232,7 @@ static void mtk_aal_write_mask(void __iomem *address, u32 data, u32 mask)
 #define AALERR(fmt, arg...) pr_notice("[ERR]%s:" fmt, __func__, ##arg)
 
 static bool debug_flow_log;
-#define pr_notice(fmt, arg...) do { \
+#define AALFLOW_LOG(fmt, arg...) do { \
 	if (debug_flow_log) \
 		pr_notice("[FLOW]%s:" fmt, __func__, ##arg); \
 	} while (0)
@@ -441,9 +441,9 @@ void disp_aal_refresh_by_kernel(void)
 
 		if (spin_trylock_irqsave(&g_aal_clock_lock, clockflags)) {
 			if (atomic_read(&g_aal_data->is_clock_on) != 1)
-				pr_notice("aal clock is off\n");
+				AALFLOW_LOG("aal clock is off\n");
 			else if (isDualPQ && atomic_read(&g_aal1_data->is_clock_on) != 1)
-				pr_notice("aal1 clock is off\n");
+				AALFLOW_LOG("aal1 clock is off\n");
 			else
 				disp_aal_set_interrupt(NULL, true);
 			spin_unlock_irqrestore(&g_aal_clock_lock, clockflags);
@@ -557,17 +557,17 @@ int mtk_drm_ioctl_aal_eventctl(struct drm_device *dev, void *data,
 	unsigned long flags, clockflags;
 	int *enabled = (int *)data;
 
-	pr_notice("%d\n", *enabled);
+	AALFLOW_LOG("%d\n", *enabled);
 
 	spin_lock_irqsave(&g_aal_irq_en_lock, flags);
 	if (atomic_read(&g_aal_force_enable_irq) == 1) {
 		if (*enabled == 0)
-			pr_notice("force enable aal ieq 0 -> 1\n");
+			AALFLOW_LOG("force enable aal ieq 0 -> 1\n");
 		*enabled = 1;
 	}
 	if (spin_trylock_irqsave(&g_aal_clock_lock, clockflags)) {
 		if (atomic_read(&aal_data->is_clock_on) != 1) {
-			pr_notice("clock is off\n");
+			AALFLOW_LOG("clock is off\n");
 			ret = -EFAULT;
 		} else
 			disp_aal_set_interrupt(comp, *enabled);
@@ -593,16 +593,16 @@ static void mtk_crtc_user_cmd_work(struct work_struct *work_item)
 	mtk_crtc_user_cmd(g_aal_data->crtc, default_comp, FLIP_SRAM, NULL);
 	mtk_crtc_check_trigger(default_comp->mtk_crtc, true, true);
 
-	pr_notice("end");
+	AALFLOW_LOG("end");
 }
 
 static void mtk_disp_aal_refresh_trigger(struct work_struct *work_item)
 {
-	pr_notice("start");
+	AALFLOW_LOG("start");
 
 	mtk_crtc_check_trigger(default_comp->mtk_crtc, true, true);
 
-	pr_notice("end");
+	AALFLOW_LOG("end");
 }
 
 void disp_aal_flip_sram(struct mtk_ddp_comp *comp, struct cmdq_pkt *handle,
@@ -618,7 +618,7 @@ void disp_aal_flip_sram(struct mtk_ddp_comp *comp, struct cmdq_pkt *handle,
 	if (comp->mtk_crtc->is_dual_pipe) {
 		if (comp->id == DDP_COMPONENT_AAL0) {
 			if (atomic_read(&g_aal_dre_config) == 1) {
-				pr_notice("[SRAM] %s g_aal_dre_config not 0 in %s",
+				AALFLOW_LOG("[SRAM] %s g_aal_dre_config not 0 in %s",
 						mtk_dump_comp_str_id(comp->id), caller);
 				return;
 			}
@@ -635,7 +635,7 @@ void disp_aal_flip_sram(struct mtk_ddp_comp *comp, struct cmdq_pkt *handle,
 			}
 		} else if (comp->id == DDP_COMPONENT_AAL1) {
 			if (atomic_read(&g_aal1_dre_config) == 1) {
-				pr_notice("[SRAM] %s g_aal1_dre_config not 0 in %s",
+				AALFLOW_LOG("[SRAM] %s g_aal1_dre_config not 0 in %s",
 						mtk_dump_comp_str_id(comp->id), caller);
 				return;
 			}
@@ -652,7 +652,7 @@ void disp_aal_flip_sram(struct mtk_ddp_comp *comp, struct cmdq_pkt *handle,
 		}
 	} else {
 		if (atomic_read(&g_aal_dre_config) == 1) {
-			pr_notice("[SRAM] g_aal_dre_config not 0 in %s", caller);
+			AALFLOW_LOG("[SRAM] g_aal_dre_config not 0 in %s", caller);
 			return;
 		}
 		atomic_set(&g_aal_dre_config, 1);
@@ -667,11 +667,11 @@ void disp_aal_flip_sram(struct mtk_ddp_comp *comp, struct cmdq_pkt *handle,
 		}
 	}
 	sram_cfg = (hist_int << 6)|(hist_apb << 5)|(1 << 4);
-	pr_notice("[SRAM] hist_apb(%d) hist_int(%d) 0x%08x comp_id[%d] in %s",
+	AALFLOW_LOG("[SRAM] hist_apb(%d) hist_int(%d) 0x%08x comp_id[%d] in %s",
 		hist_apb, hist_int, sram_cfg, comp->id, caller);
 	cmdq_pkt_write(handle, comp->cmdq_base,
 		dre3_pa + DISP_AAL_SRAM_CFG, sram_cfg, (0x7 << 4));
-	pr_notice("end comp_id[%d]", comp->id);
+	AALFLOW_LOG("end comp_id[%d]", comp->id);
 #endif
 }
 
@@ -720,11 +720,11 @@ void disp_aal_first_flip_sram(struct mtk_ddp_comp *comp,
 		}
 	}
 	sram_cfg = (hist_int << 6)|(hist_apb << 5)|(1 << 4);
-	pr_notice("[SRAM] hist_apb(%d) hist_int(%d) 0x%08x in %s",
+	AALFLOW_LOG("[SRAM] hist_apb(%d) hist_int(%d) 0x%08x in %s",
 		hist_apb, hist_int, sram_cfg, caller);
 	cmdq_pkt_write(handle, comp->cmdq_base,
 		dre3_pa + DISP_AAL_SRAM_CFG, sram_cfg, (0x7 << 4));
-	pr_notice("end comp_id[%d]", comp->id);
+	AALFLOW_LOG("end comp_id[%d]", comp->id);
 #endif
 }
 
@@ -733,15 +733,15 @@ static void mtk_aal_init(struct mtk_ddp_comp *comp,
 {
 	struct mtk_disp_aal *aal_data = comp_to_aal(comp);
 
-	pr_notice("+ comd id :%d\n", comp->id);
+	AALFLOW_LOG("+ comd id :%d\n", comp->id);
 	if (disp_aal_is_support() == true &&
 		atomic_read(&g_aal_force_relay) != 1) {
-		pr_notice("Enable AAL histogram\n");
+		AALFLOW_LOG("Enable AAL histogram\n");
 		// Enable AAL histogram, engine
 		cmdq_pkt_write(handle, comp->cmdq_base,
 			comp->regs_pa + DISP_AAL_CFG, 0x3 << 1, (0x3 << 1));
 	} else {
-		pr_notice("Disable AAL histogram\n");
+		AALFLOW_LOG("Disable AAL histogram\n");
 		// Disable AAL histogram, engine
 		cmdq_pkt_write(handle, comp->cmdq_base,
 			comp->regs_pa + DISP_AAL_CFG, 0x0 << 1, (0x3 << 1));
@@ -765,7 +765,7 @@ static void mtk_aal_init(struct mtk_ddp_comp *comp,
 	}
 
 	atomic_set(&aal_data->dirty_frame_retrieved, 1);
-	pr_notice("led mode: %d-\n", atomic_read(&g_led_mode));
+	AALFLOW_LOG("led mode: %d-\n", atomic_read(&g_led_mode));
 }
 
 static bool debug_bypass_alg_mode;
@@ -783,7 +783,7 @@ static void mtk_aal_config(struct mtk_ddp_comp *comp,
 		width = cfg->w;
 	}
 
-	pr_notice("(w,h)=(%d,%d)+, %d\n",
+	AALFLOW_LOG("(w,h)=(%d,%d)+, %d\n",
 		width, height, g_aal_get_size_available);
 
 	if (g_aal_get_size_available == false) {
@@ -795,7 +795,7 @@ static void mtk_aal_config(struct mtk_ddp_comp *comp,
 		g_dual_aal_size.isdualpipe = isDualPQ;
 		g_aal_get_size_available = true;
 		wake_up_interruptible(&g_aal_size_wq);
-		pr_notice("size available: (w,h)=(%d,%d)+\n", width, height);
+		AALFLOW_LOG("size available: (w,h)=(%d,%d)+\n", width, height);
 	}
 	val = (width << 16) | (height);
 	cmdq_pkt_write(handle, comp->cmdq_base,
@@ -808,7 +808,7 @@ static void mtk_aal_config(struct mtk_ddp_comp *comp,
 
 	if (atomic_read(&g_aal_force_relay) == 1) {
 		// Set reply mode
-		pr_notice("g_aal_force_relay\n");
+		AALFLOW_LOG("g_aal_force_relay\n");
 		cmdq_pkt_write(handle, comp->cmdq_base,
 			comp->regs_pa + DISP_AAL_CFG, 1, 1);
 	} else {
@@ -833,14 +833,14 @@ static void disp_aal_wait_hist(void)
 			ret = wait_event_interruptible(g_aal_hist_wq,
 					(atomic_read(&g_aal0_hist_available) == 1) &&
 					(atomic_read(&g_aal1_hist_available) == 1));
-		pr_notice("aal0 and aal1 hist_available = 1, waken up, ret = %d", ret);
+		AALFLOW_LOG("aal0 and aal1 hist_available = 1, waken up, ret = %d", ret);
 	} else if (atomic_read(&g_aal0_hist_available) == 0) {
-		pr_notice("wait_event_interruptible\n");
+		AALFLOW_LOG("wait_event_interruptible\n");
 		ret = wait_event_interruptible(g_aal_hist_wq,
 				atomic_read(&g_aal0_hist_available) == 1);
-		pr_notice("hist_available = 1, waken up, ret = %d", ret);
+		AALFLOW_LOG("hist_available = 1, waken up, ret = %d", ret);
 	} else
-		pr_notice("hist_available = 0");
+		AALFLOW_LOG("hist_available = 0");
 }
 
 static bool disp_aal_read_single_hist(struct mtk_ddp_comp *comp)
@@ -940,7 +940,7 @@ static int disp_aal_copy_hist_to_user(struct DISP_AAL_HIST *hist)
 
 	g_aal_hist.serviceFlags = 0;
 
-	pr_notice("%s set g_aal_force_enable_irq to 0 +\n", __func__);
+	AALFLOW_LOG("%s set g_aal_force_enable_irq to 0 +\n", __func__);
 	atomic_set(&g_aal_force_enable_irq, 0);
 
 	return ret;
@@ -1028,7 +1028,7 @@ static void disp_aal_dre3_config(struct mtk_ddp_comp *comp,
 	phys_addr_t dre3_pa = mtk_aal_dre3_pa(comp);
 	int dre_alg_mode = 1;
 
-	pr_notice("start, bitShift: %d  compId%d\n", aal_data->data->bitShift, comp->id);
+	AALFLOW_LOG("start, bitShift: %d  compId%d\n", aal_data->data->bitShift, comp->id);
 	cmdq_pkt_write(handle, comp->cmdq_base,
 		dre3_pa + DISP_AAL_DRE_BLOCK_INFO_00,
 		(g_aal_size.width - 1) << (aal_data->data->bitShift), ~0);
@@ -1162,7 +1162,7 @@ static int disp_aal_write_init_regs(struct mtk_ddp_comp *comp,
 #if defined(CONFIG_MTK_DRE30_SUPPORT)
 		disp_aal_dre3_config(comp, handle, init_regs);
 #endif
-		pr_notice("init done\n");
+		AALFLOW_LOG("init done\n");
 		ret = 0;
 	}
 
@@ -1226,8 +1226,8 @@ static int disp_aal_set_init_reg(struct mtk_ddp_comp *comp,
 
 	atomic_set(&g_aal_is_init_regs_valid, 1);
 
-	pr_notice("Set init reg: %lu\n", sizeof(*init_regs));
-	pr_notice("init_reg.dre_map_bypass:%d\n", init_regs->dre_map_bypass);
+	AALFLOW_LOG("Set init reg: %lu\n", sizeof(*init_regs));
+	AALFLOW_LOG("init_reg.dre_map_bypass:%d\n", init_regs->dre_map_bypass);
 	ret = disp_aal_write_init_regs(comp, handle);
 	if (comp->mtk_crtc->is_dual_pipe) {
 		struct mtk_drm_crtc *mtk_crtc = comp->mtk_crtc;
@@ -1238,7 +1238,7 @@ static int disp_aal_set_init_reg(struct mtk_ddp_comp *comp,
 		ret = disp_aal_write_init_regs(comp_aal1, handle);
 	}
 
-	pr_notice("ret = %d\n", ret);
+	AALFLOW_LOG("ret = %d\n", ret);
 
 	return ret;
 }
@@ -1267,7 +1267,7 @@ static int disp_aal_write_dre3_to_reg(struct mtk_ddp_comp *comp,
 {
 	unsigned long flags;
 
-	pr_notice("\n");
+	AALFLOW_LOG("\n");
 	if (atomic_read(&g_aal_change_to_dre30) == 0x3) {
 		if (copy_from_user(&g_aal_gain_db,
 			      AAL_U32_PTR(param->dre30_gain),
@@ -1341,7 +1341,7 @@ static int disp_aal_write_cabc_to_reg(struct mtk_ddp_comp *comp,
 	int i;
 	const int *gain;
 
-	pr_notice("\n");
+	AALFLOW_LOG("\n");
 	cmdq_pkt_write(handle, comp->cmdq_base,
 		comp->regs_pa + DISP_AAL_CABC_00,
 		1 << 31, 1 << 31);
@@ -1564,7 +1564,7 @@ int mtk_drm_ioctl_aal_set_param(struct drm_device *dev, void *data,
 		AALAPI_LOG("%d", backlight_value);
 		mt_leds_brightness_set("lcd-backlight", backlight_value);
 	}
-	pr_notice("delay refresh: %d", g_aal_param.refreshLatency);
+	AALFLOW_LOG("delay refresh: %d", g_aal_param.refreshLatency);
 	if (g_aal_param.refreshLatency == 33)
 		delay_refresh = true;
 	mtk_crtc_check_trigger(comp->mtk_crtc, delay_refresh, true);
@@ -1575,7 +1575,7 @@ int mtk_drm_ioctl_aal_set_param(struct drm_device *dev, void *data,
 static void mtk_aal_setbypass(struct mtk_ddp_comp *comp, int bypass,
 	struct cmdq_pkt *handle)
 {
-	pr_notice("\n");
+	AALFLOW_LOG("\n");
 	cmdq_pkt_write(handle, comp->cmdq_base, comp->regs_pa + DISP_AAL_CFG,
 		bypass, 0x1);
 	atomic_set(&g_aal_force_relay, bypass);
@@ -2068,7 +2068,7 @@ static void disp_aal_dre3_init(struct mtk_ddp_comp *comp)
 	int blk_x, blk_y, curve_point;
 	unsigned int dre3_gain[AAL_DRE3_POINT_NUM];
 
-	pr_notice("start\n");
+	AALFLOW_LOG("start\n");
 	for (curve_point = 0; curve_point < AAL_DRE3_POINT_NUM;
 		curve_point++) {
 		/* assign initial gain curve */
@@ -2165,10 +2165,10 @@ int mtk_drm_ioctl_aal_init_dre30(struct drm_device *dev, void *data,
 	struct drm_file *file_priv)
 {
 #if defined(CONFIG_MTK_DRE30_SUPPORT)
-	pr_notice("\n");
+	AALFLOW_LOG("\n");
 	disp_aal_set_init_dre30((struct DISP_DRE30_INIT *) data);
 #else
-	pr_notice("DRE30 not support\n");
+	AALFLOW_LOG("DRE30 not support\n");
 #endif
 	return 0;
 }
@@ -2200,7 +2200,7 @@ int mtk_drm_ioctl_aal_get_size(struct drm_device *dev, void *data,
 	struct mtk_drm_private *private = dev->dev_private;
 	struct mtk_ddp_comp *comp = private->ddp_comp[DDP_COMPONENT_AAL0];
 
-	pr_notice("\n");
+	AALFLOW_LOG("\n");
 	disp_aal_wait_size(60);
 	if (comp->mtk_crtc->is_dual_pipe)
 		memcpy(dst, &g_dual_aal_size, sizeof(g_dual_aal_size));
@@ -2243,7 +2243,7 @@ static void mtk_aal_start(struct mtk_ddp_comp *comp, struct cmdq_pkt *handle)
 		dre3_pa + DISP_AAL_CFG_MAIN,
 		dre_alg_mode << 4, 1 << 4);
 #endif
-	pr_notice("\n");
+	AALFLOW_LOG("\n");
 	basic_cmdq_write(handle, comp, DISP_AAL_EN, 0x1, ~0);
 }
 
@@ -2257,7 +2257,7 @@ static void mtk_aal_bypass(struct mtk_ddp_comp *comp, int bypass,
 {
 #if 1
 	if (atomic_read(&g_aal_force_relay) != bypass) {
-		pr_notice("\n");
+		AALFLOW_LOG("\n");
 		cmdq_pkt_write(handle, comp->cmdq_base, comp->regs_pa + DISP_AAL_CFG,
 			bypass, 0x1);
 		if (comp->mtk_crtc->is_dual_pipe) {
@@ -2272,14 +2272,14 @@ static void mtk_aal_bypass(struct mtk_ddp_comp *comp, int bypass,
 		atomic_set(&g_aal_force_relay, bypass);
 	}
 #else
-	pr_notice("is ignored\n");
+	AALFLOW_LOG("is ignored\n");
 #endif
 }
 
 static int mtk_aal_user_cmd(struct mtk_ddp_comp *comp, struct cmdq_pkt *handle,
 	unsigned int cmd, void *data)
 {
-	pr_notice("cmd: %d\n", cmd);
+	AALFLOW_LOG("cmd: %d\n", cmd);
 	switch (cmd) {
 	case INIT_REG:
 		if (disp_aal_set_init_reg(comp, handle,
@@ -2426,7 +2426,7 @@ static void ddp_aal_cfg_backup(struct mtk_ddp_comp *comp)
 
 static void ddp_aal_backup(struct mtk_ddp_comp *comp)
 {
-	pr_notice("\n");
+	AALFLOW_LOG("\n");
 	ddp_aal_cabc_backup(comp);
 	ddp_aal_dre_backup(comp);
 	ddp_aal_dre3_backup(comp);
@@ -2512,7 +2512,7 @@ static void ddp_aal_restore(struct mtk_ddp_comp *comp)
 	if (atomic_read(&g_aal_initialed) != 1)
 		return;
 
-	pr_notice("\n");
+	AALFLOW_LOG("\n");
 	ddp_aal_cabc_restore(comp);
 	ddp_aal_dre_restore(comp);
 	ddp_aal_dre3_restore(comp);
@@ -2534,7 +2534,7 @@ static void mtk_aal_prepare(struct mtk_ddp_comp *comp)
 		atomic_set(&g_aal_data->is_clock_on, 1);
 	if (comp->id == DDP_COMPONENT_AAL1)
 		atomic_set(&g_aal1_data->is_clock_on, 1);
-	pr_notice("[aal_data, g_aal_data] addr[%x, %x] val[%d, %d]\n",
+	AALFLOW_LOG("[aal_data, g_aal_data] addr[%x, %x] val[%d, %d]\n",
 			&aal_data->is_clock_on, &g_aal_data->is_clock_on,
 			atomic_read(&aal_data->is_clock_on),
 			atomic_read(&g_aal_data->is_clock_on));
@@ -2595,7 +2595,7 @@ static void mtk_aal_unprepare(struct mtk_ddp_comp *comp)
 	unsigned long flags;
 	bool first_backup = (atomic_read(&aal_data->is_clock_on) == 1);
 
-	pr_notice("\n");
+	AALFLOW_LOG("\n");
 	spin_lock_irqsave(&g_aal_clock_lock, flags);
 	atomic_set(&aal_data->is_clock_on, 0);
 	if (comp->id == DDP_COMPONENT_AAL0) {
@@ -2627,7 +2627,7 @@ static void mtk_aal_unprepare(struct mtk_ddp_comp *comp)
 void mtk_aal_first_cfg(struct mtk_ddp_comp *comp,
 	       struct mtk_ddp_config *cfg, struct cmdq_pkt *handle)
 {
-	pr_notice("\n");
+	AALFLOW_LOG("\n");
 	mtk_aal_config(comp, cfg, handle);
 }
 
@@ -2638,7 +2638,7 @@ int mtk_aal_io_cmd(struct mtk_ddp_comp *comp, struct cmdq_pkt *handle,
 	struct mtk_disp_aal *aal_data = comp_to_aal(comp);
 
 	if (cmd == FRAME_DIRTY) {
-		pr_notice("FRAME_DIRTY comp id:%d\n", comp->id);
+		AALFLOW_LOG("FRAME_DIRTY comp id:%d\n", comp->id);
 		if (spin_trylock_irqsave(&g_aal_clock_lock, flags)) {
 			if (atomic_read(&aal_data->is_clock_on) != 1)
 				AALIRQ_LOG("clock is off\n");
@@ -2647,7 +2647,7 @@ int mtk_aal_io_cmd(struct mtk_ddp_comp *comp, struct cmdq_pkt *handle,
 			spin_unlock_irqrestore(&g_aal_clock_lock, flags);
 		}
 	}
-	pr_notice("end\n");
+	AALFLOW_LOG("end\n");
 	return 0;
 }
 
@@ -2790,9 +2790,9 @@ void disp_aal_on_start_of_frame(void)
 		}
 		if (atomic_read(&g_aal_first_frame) == 1 &&
 				atomic_read(&g_aal1_first_frame) == 1) {
-			pr_notice("dual pipe first_flip queue_work");
+			AALFLOW_LOG("dual pipe first_flip queue_work");
 			queue_work(aal_flip_wq, &g_aal_data->aal_flip_task);
-			pr_notice("end first_flip queue_work");
+			AALFLOW_LOG("end first_flip queue_work");
 		}
 	}
 #endif
@@ -2937,7 +2937,7 @@ static int mtk_disp_aal_probe(struct platform_device *pdev)
 	aal_refresh_wq = create_singlethread_workqueue("aal_refresh_trigger");
 	INIT_WORK(&g_aal_data->aal_refresh_task, mtk_disp_aal_refresh_trigger);
 
-	pr_notice("-\n");
+	AALFLOW_LOG("-\n");
 	return ret;
 }
 
