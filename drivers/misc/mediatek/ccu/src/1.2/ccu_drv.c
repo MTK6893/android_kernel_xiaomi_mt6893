@@ -616,6 +616,9 @@ static long ccu_ioctl(struct file *flip, unsigned int cmd, unsigned long arg)
 	struct ccu_user_s *user = flip->private_data;
 
 	LOG_DBG("%s+, cmd:%d\n", __func__, cmd);
+	
+	if (cmd != CCU_IOCTL_WAIT_IRQ)
+		mutex_lock(&g_ccu_device->dev_mutex);
 
 	if ((cmd != CCU_IOCTL_SET_POWER) &&
 		(cmd != CCU_IOCTL_FLUSH_LOG) &&
@@ -623,6 +626,7 @@ static long ccu_ioctl(struct file *flip, unsigned int cmd, unsigned long arg)
 		ret = ccu_query_power_status();
 		if (ret == 0) {
 			LOG_WARN("ccuk: ioctl without powered on\n");
+			mutex_unlock(&g_ccu_device->dev_mutex);
 			return -EFAULT;
 		}
 	}
@@ -637,6 +641,7 @@ static long ccu_ioctl(struct file *flip, unsigned int cmd, unsigned long arg)
 				LOG_ERR(
 					"[%s] copy_from_user failed, ret=%d\n",
 					"SET_POWER", ret);
+				mutex_unlock(&g_ccu_device->dev_mutex);
 				return -EFAULT;
 			}
 			ret = ccu_set_power(&power);
@@ -660,6 +665,7 @@ static long ccu_ioctl(struct file *flip, unsigned int cmd, unsigned long arg)
 				LOG_ERR(
 					"[%s] copy_from_user failed, ret=%d\n",
 					"ENQUE_COMMAND", ret);
+				mutex_unlock(&g_ccu_device->dev_mutex);
 				return -EFAULT;
 			}
 			if (_is_fast_cmd(cmd->task.msg_id) == MTRUE) {
@@ -687,6 +693,7 @@ static long ccu_ioctl(struct file *flip, unsigned int cmd, unsigned long arg)
 				LOG_ERR(
 					"[%s] pop command failed, ret=%d\n",
 					"DEQUE_COMMAND", ret);
+				mutex_unlock(&g_ccu_device->dev_mutex);
 				return -EFAULT;
 			}
 
@@ -696,6 +703,7 @@ static long ccu_ioctl(struct file *flip, unsigned int cmd, unsigned long arg)
 				LOG_ERR(
 					"[%s] copy_to_user failed, ret=%d\n",
 					"DEQUE_COMMAND", ret);
+				mutex_unlock(&g_ccu_device->dev_mutex);
 				return -EFAULT;
 			}
 
@@ -704,6 +712,7 @@ static long ccu_ioctl(struct file *flip, unsigned int cmd, unsigned long arg)
 				LOG_ERR(
 					"[%s] free command, ret=%d\n",
 					"DEQUE_COMMAND", ret);
+				mutex_unlock(&g_ccu_device->dev_mutex);
 				return -EFAULT;
 			}
 
@@ -716,6 +725,7 @@ static long ccu_ioctl(struct file *flip, unsigned int cmd, unsigned long arg)
 				LOG_ERR(
 					"[%s] flush command failed, ret=%d\n",
 					"FLUSH_COMMAND", ret);
+				mutex_unlock(&g_ccu_device->dev_mutex);
 				return -EFAULT;
 			}
 
@@ -857,7 +867,10 @@ static long ccu_ioctl(struct file *flip, unsigned int cmd, unsigned long arg)
 		{
 			int regToRead = (int)arg;
 
-			return ccu_read_info_reg(regToRead);
+			int rc = ccu_read_info_reg(regToRead);
+
+			mutex_unlock(&g_ccu_device->dev_mutex);
+			return rc;
 		}
 
 	case CCU_IOCTL_PRINT_REG:
@@ -927,6 +940,8 @@ EXIT:
 		LOG_ERR("(process, pid, tgid)=(%s, %d, %d)\n",
 			current->comm, current->pid, current->tgid);
 	}
+	if (cmd != CCU_IOCTL_WAIT_IRQ)
+		mutex_unlock(&g_ccu_device->dev_mutex);
 	return ret;
 }
 
