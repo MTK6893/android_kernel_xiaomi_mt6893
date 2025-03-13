@@ -18,6 +18,8 @@
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/bio.h>
+#include <linux/sched.h>
+#include <linux/sched/signal.h>
 #include <linux/bitops.h>
 #include <linux/blkdev.h>
 #include <linux/buffer_head.h>
@@ -34,8 +36,6 @@
 #include <linux/sysfs.h>
 #include <linux/debugfs.h>
 #include <linux/cpuhotplug.h>
-#include <linux/sched.h>
-#include <linux/sched/signal.h>
 
 #include "zram_drv.h"
 
