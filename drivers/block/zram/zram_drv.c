@@ -756,6 +756,7 @@ static ssize_t writeback_store(struct device *dev,
 		struct device_attribute *attr, const char *buf, size_t len)
 {
 	struct zram *zram = dev_to_zram(dev);
+	unsigned long wb_pages_nr = 0;
 	unsigned long nr_pages = zram->disksize >> PAGE_SHIFT;
 	unsigned long index = 0;
 	struct bio bio;
@@ -763,7 +764,7 @@ static ssize_t writeback_store(struct device *dev,
 	struct page *page;
 	ssize_t ret = len;
 	int mode;
-	unsigned long blk_idx = 0, wb_pages_nr = 0;
+	unsigned long blk_idx = 0;
 
 	if (writeback_parse_input(buf, &wb_max, &wb_idle_min))
 		mode = IDLE_WRITEBACK;
