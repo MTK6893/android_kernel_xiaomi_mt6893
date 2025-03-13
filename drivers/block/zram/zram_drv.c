@@ -755,7 +755,8 @@ static ssize_t writeback_store(struct device *dev,
 {
 	struct zram *zram = dev_to_zram(dev);
 	unsigned long nr_pages = zram->disksize >> PAGE_SHIFT;
-	unsigned long index;
+	unsigned long index, wb_max = ULONG_MAX;
+	unsigned int wb_idle_min = ZRAM_WB_IDLE_DEFAULT;
 	struct bio bio;
 	struct bio_vec bio_vec;
 	struct page *page;
