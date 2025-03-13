@@ -180,15 +180,14 @@ int mtk_ipi_device_register(struct mtk_ipi_device *ipidev,
 		if (!mtk_rpchan) {
 			pr_err("%s create rpmsg channel %d fail.\n",
 				ipidev->name, index);
-			kfree(mtk_rpdev);
-			return IPI_RPMSG_ERR;
+			goto error_handle;
 		}
 		ipi_chan_table[index].rpchan = mtk_rpchan;
 		ipi_chan_table[index].ept =
 			rpmsg_create_ept(&(mtk_rpdev->rpdev),
 					NULL, mtk_rpchan, mtk_rpchan->info);
 		if (!ipi_chan_table[index].ept)
-			return -EINVAL;
+			goto error_handle;
 		ipi_chan_table[index].ipi_stage = UNUSED;
 		ipi_chan_table[index].ipi_seqno = 0;
 		atomic_set(&ipi_chan_table[index].holder, 0);
@@ -223,6 +222,29 @@ int mtk_ipi_device_register(struct mtk_ipi_device *ipidev,
 	pr_info("%s (with %d IPI) has registered.\n",
 		ipidev->name, ipi_chan_count);
 	return IPI_ACTION_DONE;
+	
+error_handle:
+	for (index = 0; index < ipi_chan_count; index++) {
+		if (ipi_chan_table[index].rpchan != NULL) {
+			kfree(ipi_chan_table[index].rpchan);
+			ipi_chan_table[index].rpchan = NULL;
+		}
+		if (ipi_chan_table[index].ept != NULL) {
+			rpmsg_destroy_ept(ipi_chan_table[index].ept);
+			ipi_chan_table[index].ept = NULL;
+		}
+	}
+	if (mtk_rpdev != NULL) {
+		device_unregister(&mtk_rpdev->rpdev.dev);
+		put_device(&mtk_rpdev->rpdev.dev);
+		mtk_rpdev == NULL;
+	}
+	if (ipi_chan_table != NULL) {
+		kfree(ipi_chan_table);
+		ipi_chan_table = NULL;
+	}
+	return IPI_RPMSG_ERR;
+
 }
 
 int mtk_ipi_device_reset(struct mtk_ipi_device *ipidev)
