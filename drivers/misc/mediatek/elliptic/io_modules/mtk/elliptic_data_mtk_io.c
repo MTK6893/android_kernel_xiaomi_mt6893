@@ -81,7 +81,7 @@ static void copy_to_local_ap_cache(
 		struct elliptic_shared_data_block *data_block =
 		    elliptic_get_shared_obj(shared_object_id);
 		memcpy(data_block->buffer, payload, shared_object_size);
-		pr_info("[ELUS] %s copied to local AP cache, size: %u",
+		pr_debug("[ELUS] %s copied to local AP cache, size: %u",
 			       name, msg_header->data_size);
 	} else {
 		pr_debug("[ELUS] %s - illegal size: %u",
@@ -276,7 +276,7 @@ int32_t elliptic_data_io_write(uint32_t message_id, const char *data,
 
 int elliptic_data_io_cleanup(void)
 {
-	pr_info("[ELUS] Unimplemented");
+	pr_debug("[ELUS] Unimplemented");
 	return 0;
 }
 
