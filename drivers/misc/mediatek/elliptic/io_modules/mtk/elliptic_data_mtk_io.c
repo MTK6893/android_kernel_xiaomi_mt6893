@@ -52,7 +52,7 @@ static struct scp_elliptic_reserved_mem_t debug_segment;
 int32_t elliptic_debug_io_open(void)
 {
 
-	pr_info("[ELUS] %s()", __func__);
+	pr_debug("[ELUS] %s()", __func__);
 	if (debug_segment.reserved == 0) {
 		debug_segment.phys =
 			scp_get_reserve_mem_phys(SCP_ELLIPTIC_DEBUG_MEM);
@@ -69,7 +69,7 @@ int32_t elliptic_debug_io_open(void)
 
 int32_t elliptic_debug_io_close(void)
 {
-	pr_info("[ELUS] %s()", __func__);
+	pr_debug("[ELUS] %s()", __func__);
 	return 0;
 }
 
