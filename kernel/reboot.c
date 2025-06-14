@@ -44,6 +44,43 @@ int reboot_cpu;
 enum reboot_type reboot_type = BOOT_ACPI;
 int reboot_force;
 
+/* Crash detection and recovery */
+static int is_crash_reboot(const char *cmd)
+{
+	/* Check for panic/oops in progress */
+	if (oops_in_progress)
+		return 1;
+
+	/* Check for system not in normal running state */
+	if (system_state != SYSTEM_RUNNING && system_state != SYSTEM_RESTART)
+		return 1;
+
+	/* Check for interrupt context (crash scenario) */
+	if (in_interrupt() || in_atomic())
+		return 1;
+
+	/* Check for specific crash-related commands */
+	if (cmd && (!strcmp(cmd, "fastboot") || !strcmp(cmd, "bootloader")))
+		return 1;
+
+	return 0;
+}
+
+static const char *redirect_crash_reboot(const char *cmd)
+{
+	if (is_crash_reboot(cmd)) {
+		pr_err("CRASH DETECTED: Redirecting %s to recovery (warm)\n",
+		       cmd ? cmd : "reboot");
+
+		/* Force warm reboot mode */
+		reboot_mode = REBOOT_WARM;
+		return "recovery";
+	}
+
+	return cmd;
+}
+
+
 /*
  * If set, this is used for preparing the system to power off.
  */
@@ -213,9 +250,12 @@ void migrate_to_reboot_cpu(void)
  */
 void kernel_restart(char *cmd)
 {
+	kmsg_dump(KMSG_DUMP_RESTART);
 	kernel_restart_prepare(cmd);
 	migrate_to_reboot_cpu();
 	syscore_shutdown();
+        /* Check and redirect crash reboots */
+	cmd = (char *)redirect_crash_reboot(cmd);
 	if (!cmd)
 		pr_emerg("Restarting system\n");
 	else
@@ -227,7 +267,6 @@ void kernel_restart(char *cmd)
 	pr_emerg("%s,      parent pid: %d,      parent thread name:%s\n", __func__, current->parent->pid, current->parent->comm);
 
 
-	kmsg_dump(KMSG_DUMP_RESTART);
 	machine_restart(cmd);
 }
 EXPORT_SYMBOL_GPL(kernel_restart);
@@ -247,11 +286,11 @@ static void kernel_shutdown_prepare(enum system_states state)
  */
 void kernel_halt(void)
 {
+	kmsg_dump(KMSG_DUMP_HALT);
 	kernel_shutdown_prepare(SYSTEM_HALT);
 	migrate_to_reboot_cpu();
 	syscore_shutdown();
 	pr_emerg("System halted\n");
-	kmsg_dump(KMSG_DUMP_HALT);
 	machine_halt();
 }
 EXPORT_SYMBOL_GPL(kernel_halt);
@@ -263,13 +302,13 @@ EXPORT_SYMBOL_GPL(kernel_halt);
  */
 void kernel_power_off(void)
 {
+	kmsg_dump(KMSG_DUMP_POWEROFF);
 	kernel_shutdown_prepare(SYSTEM_POWER_OFF);
 	if (pm_power_off_prepare)
 		pm_power_off_prepare();
 	migrate_to_reboot_cpu();
 	syscore_shutdown();
 	pr_emerg("Power down\n");
-	kmsg_dump(KMSG_DUMP_POWEROFF);
 	machine_power_off();
 }
 EXPORT_SYMBOL_GPL(kernel_power_off);
